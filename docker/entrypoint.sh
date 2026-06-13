@@ -8,7 +8,7 @@ if [ -z "$APP_KEY" ]; then
 fi
 
 # Run migrations if database is configured
-if [ -n "$DB_HOST" ] || [ -n "$DATABASE_URL" ]; then
+if [ -n "$DB_HOST" ] || [ -n "$DATABASE_URL" ] || [ -n "$DB_URL" ] || [ -n "$MYSQLHOST" ] || [ -n "$MYSQL_URL" ] || [ -n "$DB_DATABASE" ]; then
     echo "Running migrations..."
     php artisan migrate --force
 
