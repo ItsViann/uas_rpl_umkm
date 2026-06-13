@@ -39,7 +39,7 @@
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
         <x-inertia::head>
-            <title>{{ config('app.name', 'Laravel') }}</title>
+            <title>{{ \App\Models\StoreSetting::first()?->store_name ?? config('app.name', 'UMKMku') }}</title>
         </x-inertia::head>
     </head>
     <body class="font-sans antialiased">

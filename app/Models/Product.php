@@ -43,7 +43,7 @@ class Product extends Model
     /**
      * Get the category that owns the product.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<Category, $this>
+     * @return BelongsTo<Category, $this>
      */
     public function category(): BelongsTo
     {
@@ -53,7 +53,7 @@ class Product extends Model
     /**
      * Get the order items for the product.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany<OrderItem, $this>
+     * @return HasMany<OrderItem, $this>
      */
     public function orderItems(): HasMany
     {
@@ -63,7 +63,7 @@ class Product extends Model
     /**
      * Get the stock logs for the product.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany<StockLog, $this>
+     * @return HasMany<StockLog, $this>
      */
     public function stockLogs(): HasMany
     {

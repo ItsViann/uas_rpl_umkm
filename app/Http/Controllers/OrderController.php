@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
+use Illuminate\Support\Facades\Storage;
+
 class OrderController extends Controller
 {
     /**
@@ -29,6 +31,9 @@ class OrderController extends Controller
                     'price_sell' => (float) $product->price_sell,
                     'stock_current' => $product->stock_current,
                     'category' => $product->category->name,
+                    'image_url' => $product->image_path
+                        ? (filter_var($product->image_path, FILTER_VALIDATE_URL) ? $product->image_path : Storage::url($product->image_path))
+                        : null,
                 ];
             });
 
@@ -146,6 +151,124 @@ class OrderController extends Controller
             return redirect()->back()->withErrors([
                 'transaction' => $e->getMessage(),
             ]);
+        }
+    }
+
+    /**
+     * Display a listing of sales transactions (Riwayat Penjualan).
+     */
+    public function index(Request $request): Response
+    {
+        $query = Order::with(['user', 'items.product'])
+            ->orderBy('id', 'desc');
+
+        if (auth()->user()?->role === 'kasir') {
+            $query->where(function ($q) {
+                $q->where('user_id', auth()->id())
+                  ->orWhere(function ($sub) {
+                      $sub->whereNull('user_id')
+                          ->where('status', 'pending');
+                  });
+            });
+        }
+
+        $orders = $query->get()
+            ->map(function (Order $order) {
+                return [
+                    'id' => $order->id,
+                    'customer_name' => $order->customer_name,
+                    'customer_whatsapp' => $order->customer_whatsapp,
+                    'cashier_name' => $order->user->name ?? 'Online Customer',
+                    'total_price' => (float) $order->total_price,
+                    'total_paid' => (float) $order->total_paid,
+                    'change_amount' => (float) $order->change_amount,
+                    'status' => $order->status,
+                    'created_at' => $order->created_at->toISOString(),
+                    'items' => $order->items->map(function (OrderItem $item) {
+                        return [
+                            'id' => $item->id,
+                            'product_name' => $item->product->name ?? 'Produk Terhapus',
+                            'quantity' => $item->quantity,
+                            'price_at_sale' => (float) $item->price_at_sale,
+                            'price_buy_at_sale' => (float) $item->price_buy_at_sale,
+                            'subtotal' => (float) $item->subtotal,
+                        ];
+                    }),
+                ];
+            });
+
+        return Inertia::render('penjualan', [
+            'orders' => $orders,
+        ]);
+    }
+
+    /**
+     * Complete a pending online order.
+     */
+    public function complete(Request $request, int $id): RedirectResponse
+    {
+        $order = Order::findOrFail($id);
+
+        if ($order->status !== 'pending') {
+            return redirect()->back()->withErrors(['order' => 'Hanya pesanan pending yang dapat diselesaikan.']);
+        }
+
+        $request->validate([
+            'total_paid' => 'required|numeric|min:'.$order->total_price,
+        ]);
+
+        $totalPaid = (float) $request->total_paid;
+        $changeAmount = $totalPaid - (float) $order->total_price;
+
+        $order->update([
+            'user_id' => auth()->id(),
+            'total_paid' => $totalPaid,
+            'change_amount' => $changeAmount,
+            'status' => 'completed',
+        ]);
+
+        return redirect()->back()->with('success', 'Pesanan online berhasil diselesaikan.');
+    }
+
+    /**
+     * Cancel an order and restore stock levels.
+     */
+    public function cancel(int $id): RedirectResponse
+    {
+        $order = Order::findOrFail($id);
+
+        if ($order->status === 'cancelled') {
+            return redirect()->back()->withErrors(['order' => 'Transaksi sudah dibatalkan sebelumnya.']);
+        }
+
+        try {
+            DB::transaction(function () use ($order) {
+                // If the transaction was completed/pending (not already cancelled), restore the stock
+                foreach ($order->items as $item) {
+                    $product = Product::lockForUpdate()->find($item->product_id);
+                    if ($product) {
+                        $product->stock_current += $item->quantity;
+                        $product->save();
+
+                        // Log stock restoration
+                        StockLog::create([
+                            'product_id' => $product->id,
+                            'user_id' => auth()->id(),
+                            'type' => 'in',
+                            'quantity' => $item->quantity,
+                            'note' => "Pembatalan Transaksi #{$order->id}",
+                        ]);
+                    }
+                }
+
+                $order->update([
+                    'status' => 'cancelled',
+                ]);
+            });
+
+            return redirect()->back()->with('success', 'Transaksi berhasil dibatalkan dan stok dipulihkan.');
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['order' => 'Gagal membatalkan transaksi: '.$e->getMessage()]);
         }
     }
 }

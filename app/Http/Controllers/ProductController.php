@@ -46,7 +46,9 @@ class ProductController extends Controller
                 'price_sell' => (float) $product->price_sell,
                 'stock_current' => $product->stock_current,
                 'stock_min' => $product->stock_min,
-                'image_url' => $product->image_path ? Storage::url($product->image_path) : null,
+                'image_url' => $product->image_path
+                    ? (filter_var($product->image_path, FILTER_VALIDATE_URL) ? $product->image_path : Storage::url($product->image_path))
+                    : null,
                 'category' => [
                     'id' => $product->category->id,
                     'name' => $product->category->name,
@@ -82,7 +84,9 @@ class ProductController extends Controller
                 'price_sell' => (float) $product->price_sell,
                 'stock_current' => $product->stock_current,
                 'stock_min' => $product->stock_min,
-                'image_url' => $product->image_path ? Storage::url($product->image_path) : null,
+                'image_url' => $product->image_path
+                    ? (filter_var($product->image_path, FILTER_VALIDATE_URL) ? $product->image_path : Storage::url($product->image_path))
+                    : null,
                 'category' => [
                     'id' => $product->category->id,
                     'name' => $product->category->name,

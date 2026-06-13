@@ -40,7 +40,7 @@ class Order extends Model
     /**
      * Get the user (cashier) that processed the order.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<User, $this>
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {
@@ -50,7 +50,7 @@ class Order extends Model
     /**
      * Get the items for the order.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany<OrderItem, $this>
+     * @return HasMany<OrderItem, $this>
      */
     public function items(): HasMany
     {

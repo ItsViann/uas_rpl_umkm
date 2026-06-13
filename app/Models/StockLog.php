@@ -30,7 +30,7 @@ class StockLog extends Model
     /**
      * Get the product that owns the stock log.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<Product, $this>
+     * @return BelongsTo<Product, $this>
      */
     public function product(): BelongsTo
     {
@@ -40,7 +40,7 @@ class StockLog extends Model
     /**
      * Get the user who recorded the stock log.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<User, $this>
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {

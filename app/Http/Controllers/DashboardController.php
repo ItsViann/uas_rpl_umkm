@@ -15,8 +15,12 @@ class DashboardController extends Controller
     /**
      * Show the owner dashboard with sales metrics.
      */
-    public function index(Request $request): Response
+    public function index(Request $request): \Inertia\Response|\Illuminate\Http\RedirectResponse
     {
+        if (auth()->user()?->role === 'kasir') {
+            return redirect()->route('pos');
+        }
+
         if (! auth()->user() || auth()->user()->role !== 'owner') {
             abort(403, 'Akses ditolak. Hanya Owner yang diperbolehkan.');
         }

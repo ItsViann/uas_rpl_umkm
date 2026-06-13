@@ -41,7 +41,19 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'flash' => [
+                'success' => $request->session()->get('success'),
+                'error' => $request->session()->get('error'),
+                'order' => $request->session()->get('order'),
+            ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'store' => \App\Models\StoreSetting::first() ?? [
+                'store_name' => 'UMKMku',
+                'store_address' => 'Jl. Raya RPL UMKM No. 12, Malang',
+                'store_phone' => '0812-3456-7890',
+                'whatsapp_number' => '628123456789',
+                'receipt_footer' => 'Struk belanja sah sebagai bukti transaksi digital RitelKM',
+            ],
         ];
     }
 }

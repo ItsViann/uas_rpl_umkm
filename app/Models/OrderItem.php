@@ -35,7 +35,7 @@ class OrderItem extends Model
     /**
      * Get the order that owns the item.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<Order, $this>
+     * @return BelongsTo<Order, $this>
      */
     public function order(): BelongsTo
     {
@@ -45,7 +45,7 @@ class OrderItem extends Model
     /**
      * Get the product for the item.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<Product, $this>
+     * @return BelongsTo<Product, $this>
      */
     public function product(): BelongsTo
     {

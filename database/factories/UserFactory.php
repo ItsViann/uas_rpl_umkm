@@ -45,6 +45,10 @@ class UserFactory extends Factory
 
     public function withTwoFactor(): static
     {
-        return $this;
+        return $this->state(fn (array $attributes) => [
+            'two_factor_secret' => 'secret-key',
+            'two_factor_recovery_codes' => 'recovery-codes',
+            'two_factor_confirmed_at' => now(),
+        ]);
     }
 }
