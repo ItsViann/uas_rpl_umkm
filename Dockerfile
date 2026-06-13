@@ -44,7 +44,7 @@ COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
 # Set permissions and prepare storage link
 RUN chmod +x /usr/local/bin/entrypoint.sh \
-    && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
+    && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/lib/nginx /var/log/nginx \
     && php artisan storage:link --force
 
 # Expose port 8080
