@@ -9,19 +9,21 @@ Dokumen ini memuat representasi visual dari sistem RitelKM menggunakan diagram *
 Diagram Use Case menunjukkan hubungan antara aktor utama (Owner, Kasir, dan Pelanggan) dengan fitur-fitur di dalam sistem RitelKM.
 
 ```mermaid
-usecaseDiagram
-    actor Owner
-    actor Kasir
-    actor Pelanggan
+flowchart LR
+    subgraph Aktor [Aktor Pengguna]
+        Owner((Owner))
+        Kasir((Kasir))
+        Pelanggan((Pelanggan))
+    end
 
-    rectangle RitelKM {
-        usecase "UC-01: Login & Kelola Akun" as UC_Login
-        usecase "UC-02: Mengelola Inventaris (Stok)" as UC_Stok
-        usecase "UC-03: Memproses POS & Transaksi Kasir" as UC_POS
-        usecase "UC-04: Memantau Dasbor Penjualan" as UC_Report
-        usecase "UC-05: Menjelajahi Katalog Online" as UC_Catalog
-        usecase "UC-06: Mengirim Keranjang Belanja ke WhatsApp" as UC_Order
-    }
+    subgraph RitelKM [Sistem RitelKM]
+        UC_Login(UC-01: Login & Kelola Akun)
+        UC_Stok(UC-02: Mengelola Inventaris)
+        UC_POS(UC-03: Memproses POS & Transaksi)
+        UC_Report(UC-04: Memantau Dasbor Penjualan)
+        UC_Catalog(UC-05: Menjelajahi Katalog Online)
+        UC_Order(UC-06: Mengirim Keranjang ke WhatsApp)
+    end
 
     Owner --> UC_Login
     Owner --> UC_Stok
@@ -34,6 +36,7 @@ usecaseDiagram
     Pelanggan --> UC_Catalog
     Pelanggan --> UC_Order
 ```
+
 
 ---
 
@@ -136,11 +139,11 @@ graph TB
     %% Hubungan frontend - backend (Inertia)
     ReactApp -->|HTTP/JSON Requests via Inertia| Inertia
     Inertia -->|Melewatkan Data & Rute| LaravelCore
-    LaravelCore -->|Mengembalikan State Props (JSON)| Inertia
+    LaravelCore -->|Mengembalikan State Props JSON| Inertia
     Inertia -->|Update UI React| ReactApp
 
     %% Hubungan backend ke database
-    LaravelCore -->|Query SQL (Eloquent)| DB
+    LaravelCore -->|Query SQL Eloquent| DB
     
     %% Hubungan ke layanan eksternal
     ReactApp -->|Membuka Tautan WhatsApp| WhatsAppAPI
