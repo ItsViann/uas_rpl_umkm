@@ -11,6 +11,15 @@ fi
 if [ -n "$DB_HOST" ] || [ -n "$DATABASE_URL" ]; then
     echo "Running migrations..."
     php artisan migrate --force
+
+    # Check if database is empty (users count is 0)
+    USER_COUNT=$(php artisan tinker --execute="echo App\Models\User::count();" 2>/dev/null || echo "0")
+    if [ "$USER_COUNT" = "0" ] || [ -z "$USER_COUNT" ]; then
+        echo "Database is empty. Running database seeder..."
+        php artisan db:seed --force
+    else
+        echo "Database already has records ($USER_COUNT users). Skipping seeder."
+    fi
 fi
 
 # Cache config, routes, and views
