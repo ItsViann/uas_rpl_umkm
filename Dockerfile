@@ -1,12 +1,3 @@
-# Stage 1: Build frontend assets
-FROM node:20-alpine AS frontend-builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-# Stage 2: Build the production image
 FROM php:8.3-fpm-alpine
 
 # Install system dependencies
@@ -22,7 +13,9 @@ RUN apk add --no-cache \
     git \
     bash \
     curl \
-    mysql-client
+    mysql-client \
+    nodejs \
+    npm
 
 # Configure GD and other extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
@@ -37,12 +30,12 @@ WORKDIR /var/www/html
 # Copy project files
 COPY . .
 
-# Copy built frontend assets from frontend-builder
-COPY --from=frontend-builder /app/public/build ./public/build
-
-# Install PHP dependencies
+# Install PHP dependencies first (needed by Laravel to boot and dump routes for Vite build)
 ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN composer install --no-dev --optimize-autoloader --no-interaction
+
+# Install Node.js dependencies and build frontend assets
+RUN npm ci && npm run build
 
 # Copy configurations
 COPY docker/nginx.conf /etc/nginx/nginx.conf
