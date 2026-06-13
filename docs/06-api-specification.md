@@ -1,181 +1,176 @@
-# Spesifikasi REST API - RitelKM
+# Spesifikasi Endpoint Inertia & React Props - RitelKM
 
-Dokumen ini menjelaskan rancangan endpoint API yang digunakan dalam aplikasi RitelKM. API ini memfasilitasi komunikasi antara Frontend (React SPA) dan Backend (Laravel), serta integrasi data yang fleksibel.
+Aplikasi RitelKM dikembangkan menggunakan arsitektur monolitik modern berbasis **Laravel Inertia.js & React**. Komunikasi data antara Backend (Laravel) dan Frontend (React) tidak memerlukan REST API JSON biasa. Data dilewatkan sebagai **React Props** saat me-render halaman, dan aksi input dikirim menggunakan **Inertia Form Helper / Router** (`router.post`, `router.put`, `router.delete`).
+
+Dokumen ini mendefinisikan rute halaman (routes), nama komponen React (Pages), properti (*props*) yang dikirimkan, serta skema pengiriman formulir (*form submission*).
 
 ---
 
-## 1. Ringkasan Endpoint
+## 1. Ringkasan Endpoint & Halaman (Inertia Pages)
 
-| No | Modul | HTTP Verb | Endpoint | Deskripsi | Hak Akses |
+| No | Rute URL | HTTP Method | Nama Halaman React | Deskripsi | Hak Akses |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | Autentikasi | `POST` | `/api/login` | Login ke sistem dan mendapatkan sesi | Publik |
-| 2 | Autentikasi | `POST` | `/api/logout` | Menghapus sesi login | Kasir, Owner |
-| 3 | Inventaris | `GET` | `/api/products` | Mendapatkan daftar produk (dengan pencarian/filter) | Publik |
-| 4 | Inventaris | `POST` | `/api/products` | Menambah produk baru ke inventaris | Owner |
-| 5 | Inventaris | `PUT` | `/api/products/{id}`| Memperbarui data produk | Owner |
-| 6 | Inventaris | `DELETE`| `/api/products/{id}`| Menghapus produk dari database | Owner |
-| 7 | Transaksi | `POST` | `/api/orders` | Menyimpan transaksi baru (Kasir/Online) | Publik, Kasir |
-| 8 | Laporan | `GET` | `/api/reports/summary`| Mendapatkan data performa penjualan toko | Owner |
+| 1 | `/` | `GET` | `welcome` | Halaman katalog produk interaktif untuk publik. | Publik |
+| 2 | `/orders` | `POST` | (Redirect Back) | Menyimpan transaksi baru (dari kasir POS atau pesanan online). | Publik / Kasir |
+| 3 | `/dashboard`| `GET` | `dashboard` | Halaman dasbor analitik penjualan untuk Owner. | Owner |
+| 4 | `/pos` | `GET` | `pos` | Halaman kasir penjualan langsung (POS). | Kasir / Owner |
+| 5 | `/inventaris`| `GET` | `inventaris` | Halaman kelola produk dan stok barang. | Owner |
+| 6 | `/products` | `POST` | (Redirect Back) | Menambah produk baru ke inventaris. | Owner |
+| 7 | `/products/{id}`| `PUT` / `POST` | (Redirect Back) | Memperbarui detail data produk. | Owner |
+| 8 | `/products/{id}`| `DELETE` | (Redirect Back) | Menghapus produk dari database. | Owner |
 
 ---
 
-## 2. Detail Endpoint
+## 2. Detail Props Halaman & Skema Form
 
-### 2.1 Autentikasi: Login
-*   **Endpoint:** `/api/login`
-*   **Method:** `POST`
-*   **Headers:** `Content-Type: application/json`
-*   **Request Body:**
-    ```json
-    {
-      "email": "owner@ritelkm.com",
-      "password": "password123"
-    }
-    ```
-*   **Response (200 OK):**
-    ```json
-    {
-      "success": true,
-      "message": "Login berhasil",
-      "user": {
-        "id": 1,
-        "name": "Budi Santoso",
-        "email": "owner@ritelkm.com",
-        "role": "owner"
-      }
-    }
-    ```
-*   **Response (422 Unprocessable Entity):**
-    ```json
-    {
-      "message": "Validasi gagal",
-      "errors": {
-        "email": ["Email atau kata sandi salah."]
-      }
+### 2.1 Halaman Katalog Produk Publik (`welcome`)
+*   **Rute URL:** `/`
+*   **Komponen React:** `resources/js/pages/welcome.tsx`
+*   **Props yang Diterima:**
+    ```typescript
+    interface WelcomeProps {
+      products: Array<{
+        id: number;
+        name: string;
+        slug: string;
+        description: string | null;
+        price_buy: number;
+        price_sell: number;
+        stock_current: number;
+        stock_min: number;
+        image_url: string | null;
+        category: {
+          id: number;
+          name: string;
+        }
+      }>;
+      categories: Array<{
+        id: number;
+        name: string;
+        slug: string;
+      }>;
+      filters: {
+        search?: string;
+        category?: string;
+      };
     }
     ```
 
 ---
 
-### 2.2 Inventaris: Dapatkan Produk (Katalog / POS)
-Mendukung pencarian menggunakan parameter query string `search` dan filter `category`.
-*   **Endpoint:** `/api/products`
-*   **Method:** `GET`
-*   **Query Parameters:**
-    *   `search` (opsional): Mencari nama produk (e.g. `?search=kopi`)
-    *   `category` (opsional): Filter slug kategori (e.g. `?category=minuman`)
-*   **Response (200 OK):**
-    ```json
-    {
-      "success": true,
-      "data": [
-        {
-          "id": 3,
-          "name": "Kopi Gayo",
-          "slug": "kopi-gayo",
-          "description": "Kopi Arabika Gayo asli ukuran 250gr",
-          "price_buy": 15000,
-          "price_sell": 25000,
-          "stock_current": 48,
-          "stock_min": 5,
-          "image_url": "/storage/products/kopi-gayo.jpg",
-          "category": {
-            "id": 1,
-            "name": "Kopi"
+### 2.2 Halaman Kasir POS (`pos`)
+*   **Rute URL:** `/pos`
+*   **Komponen React:** `resources/js/pages/pos.tsx`
+*   **Props yang Diterima:**
+    ```typescript
+    interface POSProps {
+      products: Array<{
+        id: number;
+        name: string;
+        price_sell: number;
+        stock_current: number;
+        category: string;
+      }>;
+    }
+    ```
+*   **Aksi Checkout Transaksi (`router.post` ke `/orders`):**
+    *   **Payload Pengiriman:**
+        ```typescript
+        interface OrderForm {
+          customer_name: string; // default "Pelanggan Toko" jika POS kasir
+          customer_whatsapp?: string; // Diisi jika pemesanan katalog online
+          total_paid?: number; // Nominal pembayaran tunai (Kasir POS)
+          items: Array<{
+            product_id: number;
+            quantity: number;
+          }>;
+        }
+        ```
+    *   **Respon Sukses (Flashed props pada `usePage().props.flash`):**
+        Sistem melakukan redirect back dan me-lempar data transaksi yang sukses agar React dapat memunculkan struk belanja secara otomatis:
+        ```typescript
+        interface FlashOrderProps {
+          success: string; // "Transaksi berhasil disimpan."
+          order: {
+            id: number;
+            customer_name: string;
+            total_price: number;
+            total_paid: number;
+            change_amount: number;
+            status: 'pending' | 'completed';
+            created_at: string;
           }
         }
-      ]
-    }
-    ```
-
----
-
-### 2.3 Inventaris: Tambah Produk
-Menambahkan produk baru. Memerlukan autentikasi level **Owner**.
-*   **Endpoint:** `/api/products`
-*   **Method:** `POST`
-*   **Request Body (Multipart Form-Data):**
-    *   `name`: "Kopi Robusta"
-    *   `category_id`: 1
-    *   `price_buy`: 12000
-    *   `price_sell`: 20000
-    *   `stock_current`: 30
-    *   `stock_min`: 3
-    *   `image`: [File Binary]
-*   **Response (210 Created):**
-    ```json
-    {
-      "success": true,
-      "message": "Produk berhasil ditambahkan",
-      "product_id": 4
-    }
-    ```
-
----
-
-### 2.4 Transaksi: Buat Transaksi Baru
-Menyimpan data penjualan dari POS Kasir atau mencatat pesanan katalog online.
-*   **Endpoint:** `/api/orders`
-*   **Method:** `POST`
-*   **Request Body:**
-    ```json
-    {
-      "customer_name": "Pelanggan Toko",
-      "customer_whatsapp": null,
-      "total_paid": 50000,
-      "items": [
-        {
-          "product_id": 3,
-          "quantity": 2
+        ```
+    *   **Respon Eror (Flashed errors pada `usePage().props.errors`):**
+        ```typescript
+        interface FlashErrorsProps {
+          transaction?: string; // Pesan kesalahan stok habis atau uang pembayaran kurang
         }
-      ]
-    }
-    ```
-*   **Response (200 OK):**
-    ```json
-    {
-      "success": true,
-      "message": "Transaksi berhasil disimpan",
-      "order": {
-        "id": 154,
-        "customer_name": "Pelanggan Toko",
-        "total_price": 50000,
-        "total_paid": 50000,
-        "change_amount": 0,
-        "status": "completed",
-        "created_at": "2026-06-13T16:30:00Z"
-      }
+        ```
+
+---
+
+### 2.3 Halaman Dasbor Owner (`dashboard`)
+*   **Rute URL:** `/dashboard`
+*   **Komponen React:** `resources/js/pages/dashboard.tsx`
+*   **Props yang Diterima:**
+    ```typescript
+    interface DashboardProps {
+      summary: {
+        total_sales_today: number; // Omzet Penjualan Hari Ini
+        transaction_count_today: number; // Jumlah Transaksi Hari Ini
+        net_profit_this_month: number; // Laba Bersih Bulan Ini
+        low_stock_alerts_count: number; // Jumlah produk stok menipis
+      };
+      top_products: Array<{
+        product_id: number;
+        name: string;
+        total_sold: number;
+      }>;
     }
     ```
 
 ---
 
-### 2.5 Laporan: Ringkasan Analitik Dashboard
-Mendapatkan metrik ringkasan performa bisnis untuk ditampilkan di dashboard Owner.
-*   **Endpoint:** `/api/reports/summary`
-*   **Method:** `GET`
-*   **Headers:** `Authorization: Bearer <token>`
-*   **Response (200 OK):**
-    ```json
-    {
-      "success": true,
-      "summary": {
-        "total_sales_today": 1250000,
-        "transaction_count_today": 25,
-        "net_profit_this_month": 4500000,
-        "low_stock_alerts_count": 2
-      },
-      "top_products": [
-        {
-          "product_id": 3,
-          "name": "Kopi Gayo",
-          "total_sold": 85
-        },
-        {
-          "product_id": 1,
-          "name": "Teh Manis",
-          "total_sold": 72
+### 2.4 Halaman Manajemen Inventaris (`inventaris`)
+*   **Rute URL:** `/inventaris`
+*   **Komponen React:** `resources/js/pages/inventaris.tsx`
+*   **Props yang Diterima:**
+    ```typescript
+    interface InventarisProps {
+      products: Array<{
+        id: number;
+        name: string;
+        slug: string;
+        description: string | null;
+        price_buy: number;
+        price_sell: number;
+        stock_current: number;
+        stock_min: number;
+        image_url: string | null;
+        category: {
+          id: number;
+          name: string;
         }
-      ]
+      }>;
+      categories: Array<{
+        id: number;
+        name: string;
+      }>;
+    }
+    ```
+*   **Aksi Simpan / Tambah Produk (`router.post` ke `/products`):**
+    Mengirim data formulir Multipart (untuk mengupload file gambar):
+    ```typescript
+    interface ProductCreateForm {
+      name: string;
+      category_id: number;
+      price_buy: number;
+      price_sell: number;
+      stock_current: number;
+      stock_min: number;
+      description?: string;
+      image?: File; // file input
     }
     ```
